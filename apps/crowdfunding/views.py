@@ -139,7 +139,8 @@ def campaign_donate(request, pk):
 
         # Create Ginger's transaction right here
         description = "Payment for {}".format(campaign.desc_headline)
-        order_url = create_ginger_transaction(transaction.amount*100, description, pk)
+        order_url = create_ginger_transaction(
+            transaction.amount * 100, description, campaign, pk)
 
         # Redirect to the PSP payment page
 
@@ -175,7 +176,7 @@ def ginger_return_redirect(request):
 
 # UTILS
 
-def create_ginger_transaction(amount, description, campaign_pk):
+def create_ginger_transaction(amount, description, campaign, campaign_pk):
     """
     :return: Order URL - leading to the payment page with PM selection
     """
@@ -199,7 +200,10 @@ def create_ginger_transaction(amount, description, campaign_pk):
         'amount': amount,
         # campaign_pk used to redirect to the page of the campaign for which transaction was processed
         'return_url': COMEO_ORDER_RETURN_URL.format(campaign_pk),
-        'description': description
+        'description': description,
+        'extra': {
+            'submerchant_id': campaign.psp_submerchant_id
+        }
     }
 
     r = requests.post(order_creation_endpoint, json=body, headers=headers)
