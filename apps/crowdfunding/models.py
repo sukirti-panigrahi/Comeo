@@ -47,6 +47,8 @@ class Campaign(models.Model):
     date_finish = models.DateField(_('finish date'), null=True)
     date_created = models.DateTimeField(_('creation date'), default=timezone.now)
     views_count = models.PositiveIntegerField(_('view count'), default=0)
+    psp_submerchant_id = models.CharField(
+        verbose_name=_('PSP submerchant id'), max_length=36, blank=True)
 
     def income_transaction(self, transaction):
         self.collected_sum += transaction.amount

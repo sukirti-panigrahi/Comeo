@@ -17,6 +17,25 @@ from apps.crowdfunding.forms import DonateNewUserForm, FormDonate, CampaignForm
 from shared.shortcuts import log
 
 
+def _create_psp_submerchant_account(user):
+    base_url = '{}/merchants/{}/submerchants/'.format(
+        settings.PSP_API_URL, settings.PSP_MERCHANT_ID)
+    data = {
+        'name': user.get_full_name(),
+        'bank_account': {
+            'iban': user.profile.bank_account
+        }
+    }
+
+    response = requests.post(base_url, auth=(settings.PSP_API_KEY, ''), json=data)
+    if response.status_code not in (200, 201):
+        raise ValueError('Failed to create submerchant: {}'.format(response))
+
+    psp_submerchant_id = response.json()['id']
+
+    return psp_submerchant_id
+
+
 @login_required
 def campaign_create(request):
 
@@ -27,7 +46,10 @@ def campaign_create(request):
             created_campaign = campaign_form.save()
             created_campaign.owner = request.user
             created_campaign.editors.add(request.user)
+            psp_submerchant_id = _create_psp_submerchant_account(request.user)
+            created_campaign.psp_submerchant_id = psp_submerchant_id
             created_campaign.save()
+
             return redirect('profiles:profile_campaigns')
     else:
         campaign_form = CampaignForm()
