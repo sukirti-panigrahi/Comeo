@@ -157,3 +157,8 @@ LOGGING = {
         },
     }
 }
+
+
+GINGER_API_ENDPOINT = os.environ.get('GINGER_API_ENDPOINT') or 'https://api-dev-wl1.gingerpayments.com/'
+MARKETPLACE_MERCHANT_API_KEY = os.environ.get('MARKETPLACE_MERCHANT_API_KEY') or '67574ad783bd4809900d1dc5a22f9b3a'
+COMEO_ORDER_RETURN_URL = os.environ.get('COMEO_ORDER_RETURN_URL') or 'http://localhost/crowdfunding/ginger_return_redirect/?campaign_pk={}'

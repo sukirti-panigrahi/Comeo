@@ -9,6 +9,7 @@ from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 
 from apps.crowdfunding import tasks
 from apps.crowdfunding.models import Campaign, Transaction
@@ -158,15 +159,9 @@ def create_ginger_transaction(amount, description, campaign_pk):
     :return: Order URL - leading to the payment page with PM selection
     """
 
-    # TODO: move to env vars
+    order_creation_endpoint = settings.GINGER_API_ENDPOINT + 'v1/orders/'
 
-    GINGER_API_ENDPOINT = 'https://api-dev-wl1.gingerpayments.com/'
-    MARKETPLACE_MERCHANT_API_KEY = '67574ad783bd4809900d1dc5a22f9b3a'
-    COMEO_ORDER_RETURN_URL = 'http://localhost/crowdfunding/ginger_return_redirect/?campaign_pk={}'
-
-    order_creation_endpoint = GINGER_API_ENDPOINT + 'v1/orders/'
-
-    auth_token = 'Basic ' + (base64.b64encode((MARKETPLACE_MERCHANT_API_KEY + ':').encode())).decode()
+    auth_token = 'Basic ' + (base64.b64encode((settings.MARKETPLACE_MERCHANT_API_KEY + ':').encode())).decode()
     headers = {
         'Authorization': auth_token,
         'Content-Type': 'application/json'
@@ -176,7 +171,7 @@ def create_ginger_transaction(amount, description, campaign_pk):
         'currency': 'EUR',
         'amount': amount,
         # campaign_pk used to redirect to the page of the campaign for which transaction was processed
-        'return_url': COMEO_ORDER_RETURN_URL.format(campaign_pk),
+        'return_url': settings.COMEO_ORDER_RETURN_URL.format(campaign_pk),
         'description': description
     }
 
