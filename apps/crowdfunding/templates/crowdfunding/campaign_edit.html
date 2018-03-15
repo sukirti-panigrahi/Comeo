@@ -25,6 +25,12 @@
 
             <br><br>
             <button type="submit" class="btn btn-danger" name="delete" value=" ">{% trans 'Delete' %}</button>
+
+        {% if campaign.state == "STATE_FINISHED_SUCCESSFULLY" %}
+                <p class="lead">Request Payout</p>
+                <button type="submit" class="btn btn-success" name="payout" value=" ">{% trans 'Payout' %}</button>
+        {% endif %}
+
         {% endif %}
     </p>
 

@@ -71,6 +71,15 @@ def campaign_edit(request, pk):
     elif request.method == 'POST':
         if request.POST.get("delete", False):
             campaign.delete()
+
+        if request.POST.get("payout", False):
+            try:
+                ginger_payout_for_campaign(campaign)
+            except:
+                pass
+            # Message for the next view
+            messages.success(request, _('Payout request sent!'))
+
         else:
             # Save edited
             campaign_form = CampaignForm(instance=campaign, data=request.POST, files=request.FILES)
@@ -190,7 +199,8 @@ def create_ginger_transaction(amount, description, campaign, campaign_pk):
         'return_url': return_url,
         'description': description,
         'extra': {
-            'submerchant_id': campaign.psp_submerchant_id
+            'submerchant_id': campaign.psp_submerchant_id,
+            'pending_b2b': 1
         }
     }
 
@@ -201,3 +211,24 @@ def create_ginger_transaction(amount, description, campaign, campaign_pk):
     log.debug(order_payload)
 
     return order_payload['order_url']
+
+
+def ginger_payout_for_campaign(campaign):
+
+    balance_payout_endpoint = settings.PSP_API_URL + 'v1/balance2balance/'
+
+    body = {
+        'submerchant_id': campaign.psp_submerchant_id
+    }
+
+    r = requests.post(balance_payout_endpoint, json=body, auth=(settings.PSP_API_KEY, ''))
+    response = r.json()
+
+    log.info('Balance2Balance Payout request')
+    log.debug(response)
+
+    if response.status_code not in (200, 201):
+        raise ValueError('Failed: {}'.format(response))
+
+    return response
+

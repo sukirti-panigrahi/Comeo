@@ -157,3 +157,9 @@ LOGGING = {
         },
     }
 }
+
+
+PSP_MERCHANT_ID = '516aa11b-8979-4c80-8fd9-90ae84da2e19'
+PSP_API_URL = 'https://wl1-api-dev-domnl.gingerpayments.com/'
+PSP_API_KEY = os.environ.get('PSP_API_KEY')
+PAYMENT_RETURN_URL = os.environ.get('PAYMENT_RETURN_URL') or 'http://localhost/crowdfunding/ginger_return_redirect/?campaign_pk={}'
