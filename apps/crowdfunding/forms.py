@@ -21,7 +21,7 @@ class FormDonate(forms.ModelForm):
 
     class Meta:
         model = Transaction
-        fields = ['amount', 'method', 'agree_check']
+        fields = ['amount', 'agree_check']
 
 
 class DonateNewUserForm(forms.ModelForm):

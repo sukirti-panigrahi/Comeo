@@ -12,4 +12,5 @@ urlpatterns = [
     url(r'^campaigns/create$', views.campaign_create, name='campaign_create'),
     url(r'^campaigns/publish$/(?P<pk>\d+)/', views.campaign_edit, name='campaign_publish'),
     url(r'^campaigns/edit/(?P<pk>\d+)/$', views.campaign_edit, name='campaign_edit'),
+    url(r'^ginger_return_redirect/$', views.ginger_return_redirect, name='ginger_return_redirect')
 ]

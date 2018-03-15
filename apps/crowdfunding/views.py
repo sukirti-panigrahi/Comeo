@@ -1,4 +1,7 @@
 import datetime
+import base64
+
+import requests
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,6 +13,8 @@ from django.utils.translation import ugettext_lazy as _
 from apps.crowdfunding import tasks
 from apps.crowdfunding.models import Campaign, Transaction
 from apps.crowdfunding.forms import DonateNewUserForm, FormDonate, CampaignForm
+
+from shared.shortcuts import log
 
 
 @login_required
@@ -105,12 +110,18 @@ def campaign_donate(request, pk):
         transaction.payer = payer_user
         transaction.campaign = campaign
         transaction.is_public = donate_form.cleaned_data['is_public']
+
+        # For testing purposes, currently, all transactions are confirmed instantly
+        transaction.confirm()
         transaction.save()
 
-        # Redirect to PSP's page with payment instructions, local mock page for now
-        return redirect('crowdfunding:donate_instruction',
-                        transaction_pk=transaction.pk,
-                        campaign_pk=campaign.pk)
+        # Create Ginger's transaction right here
+        description = "Payment for {}".format(campaign.desc_headline)
+        order_url = create_ginger_transaction(transaction.amount*100, description, pk)
+
+        # Redirect to the PSP payment page
+
+        return redirect(order_url)
 
     context = {'campaign': campaign, 'donate_form': donate_form, 'new_user_form': new_user_form}
     return render(request, 'crowdfunding/campaign_donate.html', context)
@@ -125,3 +136,54 @@ def donate_instruction(request, transaction_pk, campaign_pk):
 
     return render(request, 'crowdfunding/donate_instruction.html',
                   {'pk': transaction_pk, 'campaign_pk': campaign_pk})
+
+
+def ginger_return_redirect(request):
+
+    # Happy flow: every transaction is successful! :)
+
+    # Redirect user back to the campaign details page
+
+    # Message for the next view
+    messages.success(request, _('Thanks for your donation!'))
+    campaign_pk = request.GET.get('campaign_pk')
+
+    return redirect('crowdfunding:campaign_details', pk=campaign_pk)
+
+
+# UTILS
+
+def create_ginger_transaction(amount, description, campaign_pk):
+    """
+    :return: Order URL - leading to the payment page with PM selection
+    """
+
+    # TODO: move to env vars
+
+    GINGER_API_ENDPOINT = 'https://api-dev-wl1.gingerpayments.com/'
+    MARKETPLACE_MERCHANT_API_KEY = '67574ad783bd4809900d1dc5a22f9b3a'
+    COMEO_ORDER_RETURN_URL = 'http://localhost/crowdfunding/ginger_return_redirect/?campaign_pk={}'
+
+    order_creation_endpoint = GINGER_API_ENDPOINT + 'v1/orders/'
+
+    auth_token = 'Basic ' + (base64.b64encode((MARKETPLACE_MERCHANT_API_KEY + ':').encode())).decode()
+    headers = {
+        'Authorization': auth_token,
+        'Content-Type': 'application/json'
+    }
+
+    body = {
+        'currency': 'EUR',
+        'amount': amount,
+        # campaign_pk used to redirect to the page of the campaign for which transaction was processed
+        'return_url': COMEO_ORDER_RETURN_URL.format(campaign_pk),
+        'description': description
+    }
+
+    r = requests.post(order_creation_endpoint, json=body, headers=headers)
+    order_payload = r.json()
+
+    log.info('Creating Ginger transaction')
+    log.debug(order_payload)
+
+    return order_payload['order_url']

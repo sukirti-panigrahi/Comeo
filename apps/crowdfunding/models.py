@@ -61,6 +61,16 @@ class Campaign(models.Model):
     def is_finished(self):
         return self.state in [self.STATE_FINISHED_SUCCESSFULLY, self.STATE_FINISHED_NON_SUCCESSFULLY]
 
+    def check_finalization_goal(self):
+
+        if self.collected_sum >= self.sum_goal:
+            self.state = Campaign.STATE_FINISHED_SUCCESSFULLY
+            self.finish_side_effects()
+            self.save()
+
+    def finish_side_effects(self):
+        pass
+
 
 class Transaction(models.Model):
 
@@ -87,6 +97,8 @@ class Transaction(models.Model):
         This method should be called when transaction confirmation is received from the PSP
         """
         self.campaign.income_transaction(self)
+        # try to finilize campaign on every new confirmed transaction
+        self.campaign.check_finalization_goal()
         self.date_confirmed = timezone.now()
         self.confirmed = True
         self.save()
