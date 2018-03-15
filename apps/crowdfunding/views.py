@@ -1,8 +1,8 @@
 import datetime
-import base64
 
 import requests
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
@@ -18,7 +18,7 @@ from shared.shortcuts import log
 
 
 def _create_psp_submerchant_account(user):
-    base_url = '{}/merchants/{}/submerchants/'.format(
+    base_url = '{}/v1/merchants/{}/submerchants/'.format(
         settings.PSP_API_URL, settings.PSP_MERCHANT_ID)
     data = {
         'name': user.get_full_name(),
@@ -180,33 +180,21 @@ def create_ginger_transaction(amount, description, campaign, campaign_pk):
     """
     :return: Order URL - leading to the payment page with PM selection
     """
-
-    # TODO: move to env vars
-
-    GINGER_API_ENDPOINT = 'https://api-dev-wl1.gingerpayments.com/'
-    MARKETPLACE_MERCHANT_API_KEY = '67574ad783bd4809900d1dc5a22f9b3a'
-    COMEO_ORDER_RETURN_URL = 'http://localhost/crowdfunding/ginger_return_redirect/?campaign_pk={}'
-
-    order_creation_endpoint = GINGER_API_ENDPOINT + 'v1/orders/'
-
-    auth_token = 'Basic ' + (base64.b64encode((MARKETPLACE_MERCHANT_API_KEY + ':').encode())).decode()
-    headers = {
-        'Authorization': auth_token,
-        'Content-Type': 'application/json'
-    }
-
+    # campaign_pk used to redirect to the page of the campaign for which
+    # transaction was processed
+    return_url = settings.PAYMENT_RETURN_URL.format(campaign_pk)
+    order_creation_endpoint = settings.PSP_API_URL + 'v1/orders/'
     body = {
         'currency': 'EUR',
         'amount': amount,
-        # campaign_pk used to redirect to the page of the campaign for which transaction was processed
-        'return_url': COMEO_ORDER_RETURN_URL.format(campaign_pk),
+        'return_url': return_url,
         'description': description,
         'extra': {
             'submerchant_id': campaign.psp_submerchant_id
         }
     }
 
-    r = requests.post(order_creation_endpoint, json=body, headers=headers)
+    r = requests.post(order_creation_endpoint, json=body, auth=(settings.PSP_API_KEY, ''))
     order_payload = r.json()
 
     log.info('Creating Ginger transaction')

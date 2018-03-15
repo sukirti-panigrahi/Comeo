@@ -18,6 +18,7 @@ CKEDITOR_IMAGE_BACKEND = "pillow"
 PSP_MERCHANT_ID = '<PLEASE SET_MERCHANT_ID>'
 PSP_API_URL = 'https://wl1-api-dev-domnl.gingerpayments.com/v1'
 PSP_API_KEY = '<PLEASE SET API KEY'
+PAYMENT_RETURN_URL = 'http://localhost/crowdfunding/ginger_return_redirect/?campaign_pk={}'
 
 # django debug toolbar configuration
 def show_toolbar(request):
